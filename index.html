@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phonics Lab · 自然拼读小工坊</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800&family=Noto+Sans+SC:wght@400;500;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="logo">📖</div>
+    <div>
+      <h1>Phonics Lab</h1>
+      <p>输入单词，生成自然拼读学习物料</p>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <span class="status-pill" id="statusPill">就绪</span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- 输入区 -->
+  <section class="panel input-panel">
+    <div class="panel-head">
+      <h2>① 输入单词</h2>
+      <span class="hint">每行一个，空格或逗号分隔也可以</span>
+    </div>
+
+    <div class="tab-bar">
+      <button class="tab tab-active" data-tab="manual">手动输入</button>
+      <button class="tab" data-tab="import">导入课文</button>
+    </div>
+
+    <div class="tab-panel" data-tab="manual">
+      <textarea id="wordInput" placeholder="例如：&#10;cat&#10;cake&#10;rain&#10;happy&#10;friend"></textarea>
+    </div>
+
+    <div class="tab-panel" data-tab="import" hidden>
+      <textarea id="importInput" placeholder="把一段英文课文/对话粘贴到这里，自动抽取所有单词去重。&#10;&#10;例如：&#10;Hello, I am Tom. I have a cat. The cat is on the mat.&#10;It is a happy cat."></textarea>
+      <div class="import-hint">
+        <label class="chip">
+          <input type="checkbox" id="optLowercase" checked>
+          <span>转小写</span>
+        </label>
+        <label class="chip">
+          <input type="checkbox" id="optMinLen">
+          <span>过滤 ≤2 字母</span>
+        </label>
+        <label class="chip">
+          <input type="checkbox" id="optOnlyKnown">
+          <span>只在词库内的词</span>
+        </label>
+        <button class="btn btn-ghost btn-sm" id="extractBtn">🔍 抽取</button>
+      </div>
+      <div class="import-result" id="importResult"></div>
+    </div>
+
+    <div class="controls">
+      <div class="control-group">
+        <label class="control-label">显示</label>
+        <label class="chip">
+          <input type="checkbox" id="optIPA" checked>
+          <span>音标（IPA）</span>
+        </label>
+        <label class="chip">
+          <input type="checkbox" id="optPhonics" checked>
+          <span>自然拼读音素</span>
+        </label>
+        <label class="chip">
+          <input type="checkbox" id="optFamily" checked>
+          <span>Word Family</span>
+        </label>
+        <label class="chip">
+          <input type="checkbox" id="optExample" checked>
+          <span>例句</span>
+        </label>
+        <label class="chip">
+          <input type="checkbox" id="optShowRule" checked>
+          <span>拼读规则提示</span>
+        </label>
+      </div>
+
+      <div class="control-group">
+        <label class="control-label">口音</label>
+        <label class="chip">
+          <input type="radio" name="accent" value="en-US" checked>
+          <span>美音</span>
+        </label>
+        <label class="chip">
+          <input type="radio" name="accent" value="en-GB">
+          <span>英音</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="action-row">
+      <button class="btn btn-primary" id="genBtn">✨ 生成拼读卡片</button>
+      <button class="btn btn-ghost" id="sampleBtn">示例词</button>
+      <button class="btn btn-ghost" id="clearBtn">清空</button>
+      <button class="btn btn-ghost" id="printBtn" disabled>🖨 打印卡片纸</button>
+      <span class="db-stats" id="dbStats"></span>
+    </div>
+  </section>
+
+  <!-- 图例 -->
+  <section class="legend" id="legend">
+    <span class="legend-item"><span class="dot dot-vowel"></span>元音字母</span>
+    <span class="legend-item"><span class="dot dot-consonant"></span>辅音字母</span>
+    <span class="legend-item"><span class="dot dot-digraph"></span>字母组合（拼读规则）</span>
+    <span class="legend-item"><span class="dot dot-silent"></span>不发音</span>
+    <span class="legend-item"><span class="stress-mark">ˈ</span>重读</span>
+    <span class="legend-item"><span class="stress-mark">ˌ</span>次重读</span>
+  </section>
+
+  <!-- 输出区 -->
+  <section class="output" id="output">
+    <div class="empty">
+      <div class="empty-emoji">🐣</div>
+      <p>输入几个单词，<br>看看它们是怎么"拼"出来的～</p>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>Phonics Lab · 小学英语自然拼读学习物料生成器</span>
+  <span class="footer-meta">基于 CMU Pronouncing Dictionary · 浏览器原生 TTS</span>
+</footer>
+
+<!-- 模板：单词卡 -->
+<template id="cardTemplate">
+  <article class="card">
+    <header class="card-head">
+      <div class="word-block">
+        <div class="word"></div>
+        <div class="syllable-break"></div>
+        <div class="ipa"></div>
+        <div class="phonics"></div>
+      </div>
+      <div class="audio-stack">
+        <button class="play-btn play-word" title="整词朗读">▶ 词</button>
+        <button class="play-btn play-slow" title="慢速朗读">慢</button>
+        <button class="play-btn play-phoneme" title="逐音素朗读">音</button>
+      </div>
+    </header>
+
+    <div class="grapheme-row"></div>
+
+    <div class="meta-row">
+      <span class="pos"></span>
+      <span class="family"></span>
+      <span class="count"></span>
+    </div>
+
+    <div class="example"></div>
+
+    <div class="rule"></div>
+  </article>
+</template>
+
+<script src="phonics.js"></script>
+<script src="words.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
