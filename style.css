@@ -603,6 +603,61 @@ html, body {
 .anim-controls { display: flex; gap: 10px; justify-content: center; }
 .anim-hint { text-align: center; color: var(--ink-soft); font-size: 12px; margin-top: 14px; }
 
+/* ===== 听写结果 ===== */
+.result-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 49, 66, 0.55);
+  z-index: 250;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.result-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 40px 50px 32px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+  box-shadow: var(--shadow-lg);
+  animation: cardIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.result-emoji { font-size: 56px; margin-bottom: 8px; }
+.result-title { font-size: 22px; font-weight: 800; color: var(--ink); margin-bottom: 20px; }
+.result-score {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.result-big {
+  font-family: "Nunito", sans-serif;
+  font-size: 64px;
+  font-weight: 800;
+  line-height: 1;
+}
+.result-big.good { color: #2F8F6B; }
+.result-big.mid  { color: var(--sun); }
+.result-big.bad  { color: var(--coral); }
+.result-pct {
+  font-size: 22px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.result-detail {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+.result-actions {
+  display: flex;
+  gap: 10px;
+}
+.result-actions .btn { flex: 1; justify-content: center; }
+
 /* ===== 单词卡 ===== */
 .card {
   background: var(--card);
@@ -904,4 +959,23 @@ html, body {
   .topbar, .layout, .footer { padding-left: 18px; padding-right: 18px; }
   .output { grid-template-columns: 1fr; }
   .word { font-size: 30px; }
+  .topbar { flex-direction: column; align-items: flex-start; gap: 12px; }
+  .topbar-actions { width: 100%; display: flex; flex-wrap: wrap; gap: 6px; }
+  .topbar-btn { margin-right: 0; flex: 1; min-width: 0; padding: 6px 10px; }
+  /* drawer 全宽 */
+  .drawer { width: 100%; }
+  /* dictation/animation 全屏化 */
+  .dictation-card, .anim-modal-content, .result-card {
+    padding: 24px 20px;
+    max-width: 100%;
+  }
+  .dictation-prompt { font-size: 28px; letter-spacing: 4px; }
+  .anim-letter { width: 44px; height: 54px; font-size: 36px; }
+  .result-card { padding: 32px 20px 24px; }
+  .result-big { font-size: 48px; }
+  .tab { padding: 6px 12px; font-size: 13px; }
+  .action-row { gap: 6px; }
+  .btn { padding: 8px 14px; font-size: 13px; }
+  .db-stats { width: 100%; margin-left: 0; margin-top: 4px; text-align: right; }
+  .legend { font-size: 12px; padding: 10px 12px; }
 }

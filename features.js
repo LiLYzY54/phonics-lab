@@ -128,6 +128,7 @@
     attempts: 0,
     correct: 0,
     wrong: 0,
+    markedThisWord: false,  // 当前词是否已经计过分
   };
 
   function speak(text, rate = 0.9) {
@@ -148,7 +149,7 @@
       const raw = $("wordInput").value;
       const words = raw.split(/[\s,，;；\n\r]+/).map(w => w.trim().toLowerCase()).filter(Boolean);
       if (!words.length) {
-        alert("先在输入框里放几个词，再点听写");
+        flash("先在输入框里放几个词，再点听写", "warn");
         return;
       }
       Dictation.queue = words.slice(0, 30);  // 最多 30 个
@@ -156,6 +157,7 @@
       Dictation.attempts = 0;
       Dictation.correct = 0;
       Dictation.wrong = 0;
+      Dictation.markedThisWord = false;
       $("dictationOverlay").hidden = false;
       $("dictationInput").value = "";
       $("dictationInput").classList.remove("correct", "wrong");
@@ -164,13 +166,21 @@
       nextDictationWord();
     });
 
-    $("dictationClose").addEventListener("click", endDictation);
+    $("dictationClose").addEventListener("click", () => {
+      try { window.speechSynthesis.cancel(); } catch(e) {}
+      $("dictationOverlay").hidden = true;
+      showResult();
+    });
     $("dictationInput").addEventListener("keydown", e => {
       if (e.key === "Enter") checkDictation();
     });
     $("dictCheckBtn").addEventListener("click", checkDictation);
     $("dictSkipBtn").addEventListener("click", () => {
-      Dictation.wrong++;
+      if (!Dictation.markedThisWord) {
+        Dictation.wrong++;
+        Dictation.markedThisWord = true;
+      }
+      Dictation.idx++;
       nextDictationWord();
     });
     $("dictPlayWord").addEventListener("click", () => {
@@ -199,6 +209,35 @@
       }
       next();
     });
+
+    // 结果 modal
+    $("resultCloseBtn").addEventListener("click", () => {
+      $("resultOverlay").hidden = true;
+    });
+    $("resultAgainBtn").addEventListener("click", () => {
+      $("resultOverlay").hidden = true;
+      $("dictationBtn").click();
+    });
+  }
+
+  function showResult() {
+    const total = Dictation.correct + Dictation.wrong;
+    if (total === 0) return;  // 一个没写，不弹结果
+    const pct = Math.round(Dictation.correct * 100 / total);
+    const big = $("resultBig");
+    big.textContent = `${pct}%`;
+    big.className = "result-big " + (pct >= 80 ? "good" : pct >= 50 ? "mid" : "bad");
+    $("resultPct").textContent = `正确 ${Dictation.correct} / 共 ${total}`;
+    let emoji = "💪", title = "继续加油！";
+    if (pct === 100) { emoji = "🏆"; title = "满分！真厉害！"; }
+    else if (pct >= 80) { emoji = "🎉"; title = "太棒了！"; }
+    else if (pct >= 50) { emoji = "👍"; title = "还不错！"; }
+    $("resultEmoji").textContent = emoji;
+    $("resultTitle").textContent = title;
+    $("resultDetail").textContent = Dictation.wrong > 0
+      ? `${Dictation.wrong} 个词需要再练练，可以加到生词本里 ✨`
+      : `全部一次过！可以再听写一遍巩固一下～`;
+    $("resultOverlay").hidden = false;
   }
 
   function nextDictationWord() {
@@ -208,6 +247,7 @@
     }
     Dictation.current = Dictation.queue[Dictation.idx];
     Dictation.attempts = 0;
+    Dictation.markedThisWord = false;
     $("dictationProgress").textContent = `${Dictation.idx + 1} / ${Dictation.queue.length}`;
     $("dictationInput").value = "";
     $("dictationInput").classList.remove("correct", "wrong");
@@ -241,7 +281,10 @@
       $("dictationInput").classList.remove("wrong");
       $("dictationFeedback").textContent = Dictation.attempts === 1 ? "✓ 一次过！厉害 ✨" : "✓ 对了～";
       $("dictationFeedback").className = "dictation-feedback ok";
-      Dictation.correct++;
+      if (!Dictation.markedThisWord) {
+        Dictation.correct++;
+        Dictation.markedThisWord = true;
+      }
       $("dictationInput").disabled = true;
       // 显示答案
       $("dictationPrompt").innerHTML = Dictation.current.split("").map(c => `<span>${c}</span>`).join("");
@@ -253,42 +296,54 @@
       $("dictationInput").classList.add("wrong");
       $("dictationFeedback").textContent = `✗ 再听一次试试（已尝试 ${Dictation.attempts} 次）`;
       $("dictationFeedback").className = "dictation-feedback no";
-      Dictation.wrong++;
+      if (!Dictation.markedThisWord) {
+        Dictation.wrong++;
+        Dictation.markedThisWord = true;
+      }
       // 错了自动再读一遍
       setTimeout(() => speak(Dictation.current, 0.7), 300);
     }
   }
 
   function endDictation() {
+    try { window.speechSynthesis.cancel(); } catch(e) {}
     $("dictationOverlay").hidden = true;
-    if (Dictation.correct + Dictation.wrong > 0) {
-      const total = Dictation.correct + Dictation.wrong;
-      const pct = Math.round(Dictation.correct * 100 / total);
-      alert(`听写完成！\n\n正确 ${Dictation.correct} / 共 ${total}（${pct}%）`);
-    }
+    showResult();
   }
 
   // ============================================================
   // 拼写动画（导出独立 HTML）
   // ============================================================
   let animState = null;
+  let animRunning = false;
 
   function setupAnimation() {
     $("animBtn").addEventListener("click", () => {
       const raw = $("wordInput").value.trim();
       const word = raw.split(/[\s,，;；\n\r]+/)[0];
-      if (!word) { alert("先输入一个词再生成拼写动画"); return; }
+      if (!word) { flash("先输入一个词再生成拼写动画", "warn"); return; }
       openAnimation(word.toLowerCase());
     });
     $("animClose").addEventListener("click", () => {
+      stopAnimation();
       $("animModal").hidden = true;
-      try { window.speechSynthesis.cancel(); } catch(e) {}
     });
-    $("animPlay").addEventListener("click", playAnimation);
+    $("animPlay").addEventListener("click", () => {
+      stopAnimation();
+      playAnimation();
+    });
     $("animReplay").addEventListener("click", () => {
-      resetAnimation(); playAnimation();
+      stopAnimation();
+      resetAnimation();
+      // 短暂延迟让用户看到重置状态
+      setTimeout(playAnimation, 100);
     });
     $("animExport").addEventListener("click", exportAnimation);
+  }
+
+  function stopAnimation() {
+    animRunning = false;
+    try { window.speechSynthesis.cancel(); } catch(e) {}
   }
 
   function openAnimation(word) {
@@ -312,7 +367,7 @@
 
   function playAnimation() {
     if (!animState) return;
-    resetAnimation();
+    animRunning = true;
     const letters = $("animLetters").querySelectorAll(".anim-letter");
     const sound = $("animSound");
     const data = animState.data;
@@ -325,23 +380,24 @@
 
     let i = 0;
     function playOne() {
+      if (!animRunning) return;  // 被打断
       if (i >= letters.length) {
         // 整词读
         setTimeout(() => {
+          if (!animRunning) return;
           sound.textContent = `/${analyzed ? analyzed.ipaFull : animState.word}/`;
           speak(animState.word, 0.85);
+          animRunning = false;
         }, 200);
         return;
       }
       const el = letters[i];
       el.classList.add("shown");
-      // 找出当前字母对应的音素
       let soundText = "";
       if (analyzed && analyzed.phonemes[i]) {
         soundText = `/${analyzed.phonemes[i].ipa}/`;
       }
       sound.textContent = soundText;
-      // 读这个音
       const u = new SpeechSynthesisUtterance(ipaToSpoken(soundText.replace(/\//g, "")) || animState.letters[i]);
       u.lang = getAccent();
       u.rate = 0.7;
@@ -350,6 +406,7 @@
         i++;
         setTimeout(playOne, 250);
       };
+      u.onerror = () => { animRunning = false; };
       window.speechSynthesis.speak(u);
     }
     setTimeout(playOne, 100);
@@ -481,5 +538,46 @@ setTimeout(play,500);
     setupWordbook();
     setupDictation();
     setupAnimation();
+
+    // ESC 键关闭打开的模态
+    document.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape") return;
+      // 按打开顺序倒序关闭
+      if (!$("animModal").hidden) {
+        stopAnimation();
+        $("animModal").hidden = true;
+        return;
+      }
+      if (!$("resultOverlay").hidden) {
+        $("resultOverlay").hidden = true;
+        return;
+      }
+      if (!$("dictationOverlay").hidden) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+        $("dictationOverlay").hidden = true;
+        showResult();
+        return;
+      }
+      if (!$("wordbookDrawer").hidden) {
+        $("wordbookDrawer").hidden = true;
+      }
+    });
+
+    // 点遮罩关闭（点模态框外）
+    [$("animModal"), $("resultOverlay"), $("dictationOverlay")].forEach(overlay => {
+      overlay.addEventListener("click", (e) => {
+        if (e.target !== overlay) return;  // 只在点遮罩本身时关
+        if (overlay === $("animModal")) {
+          stopAnimation();
+          overlay.hidden = true;
+        } else if (overlay === $("dictationOverlay")) {
+          try { window.speechSynthesis.cancel(); } catch(e) {}
+          overlay.hidden = true;
+          showResult();
+        } else {
+          overlay.hidden = true;
+        }
+      });
+    });
   });
 })();
