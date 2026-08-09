@@ -20,6 +20,8 @@
     </div>
   </div>
   <div class="topbar-actions">
+    <button class="topbar-btn" id="dictationBtn" title="听写模式">✏️ 听写</button>
+    <button class="topbar-btn" id="wordbookBtn" title="我的生词本">⭐ <span id="wordbookCount">0</span></button>
     <span class="status-pill" id="statusPill">就绪</span>
   </div>
 </header>
@@ -104,6 +106,7 @@
       <button class="btn btn-primary" id="genBtn">✨ 生成拼读卡片</button>
       <button class="btn btn-ghost" id="sampleBtn">示例词</button>
       <button class="btn btn-ghost" id="clearBtn">清空</button>
+      <button class="btn btn-ghost" id="animBtn">📼 拼写动画</button>
       <button class="btn btn-ghost" id="printBtn" disabled>🖨 打印卡片纸</button>
       <span class="db-stats" id="dbStats"></span>
     </div>
@@ -134,6 +137,63 @@
   <span class="footer-meta">基于 CMU Pronouncing Dictionary · 浏览器原生 TTS</span>
 </footer>
 
+<!-- 生词本抽屉 -->
+<aside class="drawer" id="wordbookDrawer" hidden>
+  <div class="drawer-head">
+    <h3>⭐ 我的生词本</h3>
+    <button class="drawer-close" id="drawerClose">×</button>
+  </div>
+  <div class="drawer-body">
+    <div class="drawer-actions">
+      <button class="btn btn-ghost btn-sm" id="wbGenBtn">✨ 生成卡片</button>
+      <button class="btn btn-ghost btn-sm" id="wbExportBtn">📥 导出 CSV</button>
+      <button class="btn btn-ghost btn-sm" id="wbClearBtn">🗑 清空</button>
+    </div>
+    <div class="wordbook-list" id="wordbookList"></div>
+  </div>
+</aside>
+
+<!-- 听写模式遮罩 -->
+<div class="dictation-overlay" id="dictationOverlay" hidden>
+  <div class="dictation-card">
+    <button class="dictation-close" id="dictationClose">×</button>
+    <div class="dictation-progress" id="dictationProgress">1 / 5</div>
+    <div class="dictation-display">
+      <div class="dictation-prompt" id="dictationPrompt">听一听，写一写</div>
+      <div class="dictation-ipa" id="dictationIPA"></div>
+    </div>
+    <div class="dictation-controls">
+      <button class="btn btn-ghost" id="dictPlayWord">🔊 整词</button>
+      <button class="btn btn-ghost" id="dictPlaySlow">慢</button>
+      <button class="btn btn-ghost" id="dictPlayPhoneme">逐音</button>
+    </div>
+    <input type="text" class="dictation-input" id="dictationInput" placeholder="拼出你听到的单词..." autocomplete="off" autocapitalize="off" spellcheck="false">
+    <div class="dictation-feedback" id="dictationFeedback"></div>
+    <div class="dictation-actions">
+      <button class="btn btn-primary" id="dictCheckBtn">检查 ✓</button>
+      <button class="btn btn-ghost" id="dictSkipBtn">跳过 ⏭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 拼写动画模态 -->
+<div class="anim-modal" id="animModal" hidden>
+  <div class="anim-modal-content">
+    <button class="dictation-close" id="animClose">×</button>
+    <h3>📼 拼写动画 · <span id="animWord"></span></h3>
+    <div class="anim-stage" id="animStage">
+      <div class="anim-letters" id="animLetters"></div>
+      <div class="anim-sound" id="animSound"></div>
+    </div>
+    <div class="anim-controls">
+      <button class="btn btn-ghost" id="animPlay">▶ 播放</button>
+      <button class="btn btn-ghost" id="animReplay">↻ 重播</button>
+      <button class="btn btn-primary" id="animExport">📥 导出 HTML</button>
+    </div>
+    <p class="anim-hint">每个字母依次出现并发出它的音，最后整词拼读。可以导出成单个 .html 文件分享。</p>
+  </div>
+</div>
+
 <!-- 模板：单词卡 -->
 <template id="cardTemplate">
   <article class="card">
@@ -159,15 +219,21 @@
       <span class="count"></span>
     </div>
 
-    <div class="example"></div>
+    <div class="example">
+      <button class="play-ex" title="朗读例句">🔊</button>
+      <span class="ex-text"></span>
+    </div>
 
     <div class="rule"></div>
+
+    <button class="star-btn" title="加入生词本">☆</button>
   </article>
 </template>
 
 <script src="phonics.js"></script>
 <script src="words.js"></script>
 <script src="app.js"></script>
+<script src="features.js"></script>
 
 </body>
 </html>

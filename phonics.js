@@ -106,14 +106,13 @@
       word: w,
       cmu: dbEntry.cmu,
       syllables,
+      phonemes,    // 扁平音素数组（每个元素有 arpa/ipa/stress/isVowel/phonics）
       graphemes,
       syllableCount,
       pos: dbEntry.pos,
       family: dbEntry.family,
       example: dbEntry.example,
-      // 完整 IPA
       ipaFull: phonemes.map(p => p.ipa).join(""),
-      // 完整 phonics 串
       phonicsFull: phonemes.map(p => p.phonics).join(""),
     };
   }

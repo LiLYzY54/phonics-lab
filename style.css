@@ -40,6 +40,7 @@
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
+[hidden] { display: none !important; }
 
 html, body {
   background: var(--bg);
@@ -368,6 +369,240 @@ html, body {
   font-weight: 600;
 }
 
+/* ===== 顶栏按钮 ===== */
+.topbar-btn {
+  border: 1.5px solid var(--line);
+  background: #fff;
+  padding: 6px 14px;
+  border-radius: var(--radius-pill);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-right: 8px;
+}
+.topbar-btn:hover { border-color: var(--coral); color: var(--coral); }
+.topbar-btn.active { background: var(--coral); color: #fff; border-color: var(--coral); }
+
+/* ===== 生词本抽屉 ===== */
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 360px;
+  height: 100vh;
+  background: #fff;
+  box-shadow: -4px 0 20px rgba(45, 49, 66, 0.1);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  animation: slideInR 0.25s ease-out;
+}
+@keyframes slideInR { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.drawer-head {
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.drawer-head h3 { font-size: 16px; }
+.drawer-close {
+  border: none;
+  background: transparent;
+  font-size: 26px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  line-height: 1;
+}
+.drawer-close:hover { background: var(--coral-soft); color: var(--coral); }
+.drawer-body { padding: 18px 22px; flex: 1; overflow-y: auto; }
+.drawer-actions { display: flex; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+.wordbook-list { display: flex; flex-direction: column; gap: 6px; }
+.wb-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+}
+.wb-item .wb-word { font-family: "Nunito", sans-serif; font-size: 18px; }
+.wb-item .wb-ipa { color: var(--lilac); font-size: 12px; font-family: "JetBrains Mono", monospace; }
+.wb-item .wb-del {
+  border: none; background: transparent; color: var(--ink-faint);
+  cursor: pointer; font-size: 18px; padding: 0 4px;
+}
+.wb-item .wb-del:hover { color: var(--coral); }
+.wb-empty { text-align: center; color: var(--ink-faint); padding: 30px 0; font-size: 14px; }
+
+/* ===== 听写模式 ===== */
+.dictation-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 49, 66, 0.55);
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.dictation-card {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 36px 40px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  animation: cardIn 0.3s ease-out;
+}
+.dictation-progress {
+  position: absolute;
+  top: 18px;
+  right: 60px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+.dictation-display { text-align: center; margin: 18px 0 24px; }
+.dictation-prompt {
+  font-family: "Nunito", sans-serif;
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: 8px;
+  min-height: 50px;
+}
+.dictation-prompt span {
+  display: inline-block;
+  margin: 0 4px;
+  padding: 2px 6px;
+  background: var(--coral-soft);
+  color: var(--coral);
+  border-radius: 6px;
+  animation: letterPop 0.3s ease-out;
+}
+@keyframes letterPop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+.dictation-ipa {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 16px;
+  color: var(--lilac);
+  margin-top: 8px;
+  min-height: 22px;
+}
+.dictation-controls {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.dictation-input {
+  width: 100%;
+  padding: 14px 18px;
+  font-family: "Nunito", sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  border: 2.5px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  color: var(--ink);
+  letter-spacing: 4px;
+  transition: all 0.15s;
+}
+.dictation-input:focus { outline: none; border-color: var(--coral); background: #fff; }
+.dictation-input.correct { border-color: var(--mint); background: var(--mint-soft); color: #2F8F6B; }
+.dictation-input.wrong { border-color: var(--coral); background: var(--coral-soft); color: var(--coral); }
+.dictation-feedback {
+  text-align: center;
+  font-size: 14px;
+  min-height: 24px;
+  margin: 12px 0;
+  font-weight: 600;
+}
+.dictation-feedback.ok { color: #2F8F6B; }
+.dictation-feedback.no { color: var(--coral); }
+.dictation-actions { display: flex; gap: 10px; }
+.dictation-actions .btn { flex: 1; justify-content: center; }
+
+/* ===== 拼写动画 ===== */
+.anim-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 49, 66, 0.55);
+  z-index: 200;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.anim-modal-content {
+  background: #fff;
+  border-radius: var(--radius-lg);
+  padding: 32px 36px;
+  width: 100%;
+  max-width: 560px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  animation: cardIn 0.3s ease-out;
+}
+.anim-modal-content h3 { margin-bottom: 8px; }
+.anim-stage {
+  background: var(--bg-soft);
+  border-radius: var(--radius);
+  padding: 36px 20px;
+  text-align: center;
+  margin: 20px 0;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+}
+.anim-letters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.anim-letter {
+  font-family: "Nunito", sans-serif;
+  font-size: 48px;
+  font-weight: 800;
+  width: 56px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #fff;
+  border: 2.5px solid var(--line);
+  color: var(--ink-faint);
+  transition: all 0.2s;
+}
+.anim-letter.shown {
+  background: var(--coral-soft);
+  border-color: var(--coral);
+  color: var(--coral);
+  transform: scale(1.1);
+}
+.anim-letter.vowel { color: var(--vowel); }
+.anim-letter.vowel.shown { background: var(--coral-soft); border-color: var(--coral); }
+.anim-sound {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 20px;
+  color: var(--lilac);
+  min-height: 28px;
+}
+.anim-controls { display: flex; gap: 10px; justify-content: center; }
+.anim-hint { text-align: center; color: var(--ink-soft); font-size: 12px; margin-top: 14px; }
+
 /* ===== 单词卡 ===== */
 .card {
   background: var(--card);
@@ -551,11 +786,52 @@ html, body {
   font-size: 14px;
   color: var(--ink);
   border-left: 3px solid var(--sun);
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 .example::before {
-  content: "📝 ";
-  margin-right: 2px;
+  content: "📝";
+  margin-right: 0;
+  flex-shrink: 0;
 }
+.ex-text { flex: 1; }
+.play-ex {
+  flex-shrink: 0;
+  border: none;
+  background: rgba(255, 199, 90, 0.3);
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.play-ex:hover { background: var(--sun); transform: scale(1.1); }
+.play-ex.playing { background: var(--coral); color: #fff; animation: pulse 1s ease-in-out infinite; }
+
+/* 生词本星标 */
+.star-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: none;
+  background: transparent;
+  font-size: 22px;
+  color: var(--ink-faint);
+  cursor: pointer;
+  padding: 4px 8px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  z-index: 2;
+}
+.star-btn:hover { background: var(--sun-soft); color: var(--sun); transform: scale(1.15); }
+.star-btn.starred { color: var(--sun); }
+.card.has-rule { padding-bottom: 14px; }
 
 /* 拼读规则提示 */
 .rule {

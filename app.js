@@ -7,6 +7,7 @@
   // 优先级：words.js (人工高质量) > words-extra.json (自动批量)
   const DB = Object.create(null);
   const DB_META = Object.create(null);  // { source: "manual" | "auto" }
+  window.DB = DB;  // 暴露给 features.js 使用
 
   async function loadAll() {
     // 1. 手工核心词
@@ -262,8 +263,33 @@
 
     const exEl = card.querySelector(".example");
     if (info.data.example && $("optExample").checked) {
-      exEl.textContent = info.data.example;
+      card.querySelector(".ex-text").textContent = info.data.example;
+      // 例句 TTS
+      const exPlayBtn = card.querySelector(".play-ex");
+      exPlayBtn.addEventListener("click", () => {
+        exPlayBtn.classList.add("playing");
+        const u = speak(info.data.example, 0.85, 1);
+        u.onend = () => exPlayBtn.classList.remove("playing");
+      });
     } else { exEl.style.display = "none"; }
+
+    // 生词本星标
+    const starBtn = card.querySelector(".star-btn");
+    const wordbook = window.Wordbook ? window.Wordbook.load() : [];
+    if (wordbook.includes(info.word)) starBtn.classList.add("starred"), starBtn.textContent = "★";
+    starBtn.addEventListener("click", () => {
+      const nowIn = window.Wordbook.toggle(info.word);
+      if (nowIn) {
+        starBtn.classList.add("starred");
+        starBtn.textContent = "★";
+        flash(`已收藏 "${info.word}" 到生词本`, "success");
+      } else {
+        starBtn.classList.remove("starred");
+        starBtn.textContent = "☆";
+        flash(`已从生词本移除`, "");
+      }
+      window.dispatchEvent(new Event("wordbook:changed"));
+    });
 
     // 拼读规则提示
     const ruleEl = card.querySelector(".rule");
@@ -335,6 +361,7 @@
     for (const ch of ipa) out += (map[ch] || ch) + " ";
     return out.trim();
   }
+  window.ipaToSpoken = ipaToSpoken;  // 暴露给 features.js
 
   // ===== 主入口：生成 =====
   function generate() {
