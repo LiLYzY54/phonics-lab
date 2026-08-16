@@ -208,16 +208,25 @@
       const analyzed = window.Phonics.analyze(Dictation.current, data);
       const sounds = analyzed.phonemes.map(p => ipaToSpoken(p.ipa));
       try { window.speechSynthesis.cancel(); } catch(e) {}
+      // 用主程序选中的 voice
+      const voices = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
+      const wantedName = (() => { try { return localStorage.getItem("phonics_lab_voice"); } catch (e) { return null; } })();
+      const voice = (wantedName && voices.find(x => x.name === wantedName))
+                  || voices.find(x => x.lang === getAccent() && !isJokeName(x.name))
+                  || voices.find(x => x.lang.startsWith("en") && !isJokeName(x.name));
       let i = 0;
       function next() {
         if (i >= sounds.length) return;
         const u = new SpeechSynthesisUtterance(sounds[i]);
         u.lang = getAccent();
-        u.rate = 0.7;
-        u.pitch = 1.2;
-        u.onend = next;
+        u.rate = 0.9;
+        u.pitch = 1.0;
+        if (voice) u.voice = voice;
+        u.onend = () => {
+          i++;
+          setTimeout(next, 180);
+        };
         window.speechSynthesis.speak(u);
-        i++;
       }
       next();
     });
@@ -390,11 +399,17 @@
 
     try { window.speechSynthesis.cancel(); } catch(e) {}
 
+    // 用主程序选中的 voice
+    const voices = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
+    const wantedName = (() => { try { return localStorage.getItem("phonics_lab_voice"); } catch (e) { return null; } })();
+    const voice = (wantedName && voices.find(x => x.name === wantedName))
+                || voices.find(x => x.lang === getAccent() && !isJokeName(x.name))
+                || voices.find(x => x.lang.startsWith("en") && !isJokeName(x.name));
+
     let i = 0;
     function playOne() {
-      if (!animRunning) return;  // 被打断
+      if (!animRunning) return;
       if (i >= letters.length) {
-        // 整词读
         setTimeout(() => {
           if (!animRunning) return;
           sound.textContent = `/${analyzed ? analyzed.ipaFull : animState.word}/`;
@@ -412,8 +427,9 @@
       sound.textContent = soundText;
       const u = new SpeechSynthesisUtterance(ipaToSpoken(soundText.replace(/\//g, "")) || animState.letters[i]);
       u.lang = getAccent();
-      u.rate = 0.7;
-      u.pitch = 1.2;
+      u.rate = 0.9;
+      u.pitch = 1.0;
+      if (voice) u.voice = voice;
       u.onend = () => {
         i++;
         setTimeout(playOne, 250);

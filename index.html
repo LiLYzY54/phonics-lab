@@ -204,8 +204,10 @@
 <!-- 拼写动画模态 -->
 <div class="anim-modal" id="animModal" hidden>
   <div class="anim-modal-content">
-    <button class="dictation-close" id="animClose">×</button>
-    <h3>📼 拼写动画 · <span id="animWord"></span></h3>
+    <header class="anim-header">
+      <h3>📼 拼写动画 · <span id="animWord"></span></h3>
+      <button class="card-close" id="animClose" title="关闭">×</button>
+    </header>
     <div class="anim-stage" id="animStage">
       <div class="anim-letters" id="animLetters"></div>
       <div class="anim-sound" id="animSound"></div>
@@ -242,6 +244,7 @@
       <span class="pos"></span>
       <span class="family"></span>
       <span class="count"></span>
+      <button class="star-btn" title="加入生词本">☆</button>
     </div>
 
     <div class="example">
@@ -250,8 +253,6 @@
     </div>
 
     <div class="rule"></div>
-
-    <button class="star-btn" title="加入生词本">☆</button>
   </article>
 </template>
 

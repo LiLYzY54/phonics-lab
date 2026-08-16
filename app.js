@@ -416,6 +416,7 @@
       phBtn.classList.add("playing");
       const sounds = info.analyzed.phonemes.map(p => ipaToSpoken(p.ipa));
       try { window.speechSynthesis.cancel(); } catch(e) {}
+      const voice = pickDefaultVoice();
       let i = 0;
       function next() {
         if (i >= sounds.length) {
@@ -424,11 +425,15 @@
         }
         const u = new SpeechSynthesisUtterance(sounds[i]);
         u.lang = accent;
-        u.rate = 0.7;
-        u.pitch = 1.2;
-        u.onend = next;
+        // 短音素不要 rate 太低、pitch 不要抬高，否则容易失真
+        u.rate = 0.9;
+        u.pitch = 1.0;
+        if (voice) u.voice = voice;
+        u.onend = () => {
+          i++;
+          setTimeout(next, 180);  // 音素间加 180ms 停顿
+        };
         window.speechSynthesis.speak(u);
-        i++;
       }
       next();
     });
