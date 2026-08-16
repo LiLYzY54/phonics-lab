@@ -136,8 +136,20 @@
     const u = new SpeechSynthesisUtterance(text);
     u.lang = (document.querySelector('input[name="accent"]:checked') || {}).value || "en-US";
     u.rate = rate;
+    // 优先用用户选中的声音
+    const voices = (window.speechSynthesis && window.speechSynthesis.getVoices()) || [];
+    const wantedName = (() => { try { return localStorage.getItem("phonics_lab_voice"); } catch (e) { return null; } })();
+    const v = (wantedName && voices.find(x => x.name === wantedName))
+            || voices.find(x => x.lang === u.lang && !isJokeName(x.name))
+            || voices.find(x => x.lang.startsWith("en") && !isJokeName(x.name));
+    if (v) u.voice = v;
     window.speechSynthesis.speak(u);
     return u;
+  }
+
+  function isJokeName(name) {
+    const n = (name || "").toLowerCase();
+    return ["albert","bad news","bahh","bells","boing","bubbles","cellos","deranged","good news","jester","junior","kathy","organ","pipe","princess","ralph","reed","rocko","sandy","superstar","tin","tracy","whisper","whispery","wobble","zarvox"].some(p => n.includes(p));
   }
 
   function getAccent() {
@@ -512,7 +524,7 @@ function spoken(ipa){
   return ipa.split('').map(c=>m[c]||c).join(' ');
 }
 
-function speak(text,rate){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=rate;speechSynthesis.speak(u);}
+function speak(text,rate){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.lang="en-US";u.rate=rate;const vs=speechSynthesis.getVoices()||[];const JOKE=["albert","bad news","bahh","bells","boing","bubbles","cellos","deranged","good news","jester","junior","kathy","organ","pipe","princess","ralph","reed","rocko","sandy","superstar","tin","tracy","whisper","whispery","wobble","zarvox"];const v=vs.find(x=>!JOKE.some(j=>x.name.toLowerCase().includes(j)));if(v)u.voice=v;speechSynthesis.speak(u);}
 
 document.getElementById('play').addEventListener('click',play);
 document.getElementById('replay').addEventListener('click',play);

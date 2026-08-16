@@ -369,6 +369,22 @@ html, body {
   font-weight: 600;
 }
 
+.voice-select {
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  background: var(--bg-soft);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  cursor: pointer;
+  max-width: 200px;
+  transition: all 0.15s;
+}
+.voice-select:hover { background: var(--coral-soft); color: var(--coral); }
+.voice-select:focus { outline: none; border-color: var(--coral); background: #fff; }
+
 /* ===== 顶栏按钮 ===== */
 .topbar-btn {
   border: 1.5px solid var(--line);

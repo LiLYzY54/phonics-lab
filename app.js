@@ -9,6 +9,92 @@
   const DB_META = Object.create(null);  // { source: "manual" | "auto" }
   window.DB = DB;  // 暴露给 features.js 使用
 
+  // ===== TTS 声音管理 =====
+  // macOS / Windows / Chrome 都有一套"搞笑声音"（Bad News / Bubbles / Zarvox 等），
+  // 选错了会导致嘶哑/破音。这里强制屏蔽。
+  const JOKE_VOICE_PATTERNS = [
+    "albert", "bad news", "bahh", "bells", "boing", "bubbles", "cellos",
+    "deranged", "good news", "jester", "junior", "kathy", "organ",
+    "pipe", "princess", "ralph", "reed", "rocko", "sandy", "superstar",
+    "tin", "tracy", "whisper", "whispery", "wobble", "zarvox",
+    "novelty", "funny", "joke",
+  ];
+  const PREFERRED_VOICE_KEYWORDS = [
+    // 优先级从高到低
+    "samantha", "karen", "daniel", "moira", "tessa", "ava",
+    "fiona", "victoria", "alex", "siri",
+    "neural", "premium", "enhanced", "natural", "wavenet", "studio",
+    "google us", "google uk", "google 普通话",
+    "microsoft", "zira", "david", "mark", "hazel", "aria", "jenny", "guy",
+  ];
+
+  let availableVoices = [];          // 已加载的去重后 voices
+  let selectedVoiceName = null;      // 用户选择的具体 voice name
+  let voicesReady = false;
+
+  function isJokeVoice(name) {
+    const n = (name || "").toLowerCase();
+    return JOKE_VOICE_PATTERNS.some(p => n.includes(p));
+  }
+
+  function voiceQualityScore(voice) {
+    // 评分越高越优先
+    const name = (voice.name || "").toLowerCase();
+    if (isJokeVoice(voice.name)) return -1000;
+    for (let i = 0; i < PREFERRED_VOICE_KEYWORDS.length; i++) {
+      if (name.includes(PREFERRED_VOICE_KEYWORDS[i])) return 1000 - i;
+    }
+    // local / system 声音优先
+    if (voice.localService) return 100;
+    return 50;
+  }
+
+  function loadEnglishVoices() {
+    if (!window.speechSynthesis) return [];
+    const all = window.speechSynthesis.getVoices() || [];
+    // 只取英语 + 屏蔽 joke
+    const enVoices = all.filter(v => (v.lang || "").toLowerCase().startsWith("en"))
+                        .filter(v => !isJokeVoice(v.name));
+    // 按质量排序
+    enVoices.sort((a, b) => voiceQualityScore(b) - voiceQualityScore(a));
+    return enVoices;
+  }
+
+  function pickDefaultVoice() {
+    if (!availableVoices.length) return null;
+    // 用户偏好优先
+    if (selectedVoiceName) {
+      const m = availableVoices.find(v => v.name === selectedVoiceName);
+      if (m) return m;
+    }
+    // 否则取质量最高（已排序）
+    return availableVoices[0];
+  }
+
+  function refreshVoiceList() {
+    availableVoices = loadEnglishVoices();
+    voicesReady = availableVoices.length > 0;
+    if (!voicesReady) return;
+
+    const sel = $("voiceSelect");
+    if (!sel) return;
+    sel.innerHTML = "";
+    // 优先按 accent 过滤
+    const accent = (document.querySelector('input[name="accent"]:checked') || {}).value || "en-US";
+    const accented = availableVoices.filter(v => v.lang === accent);
+    const others = availableVoices.filter(v => v.lang !== accent);
+    const list = [...accented, ...others];
+
+    list.forEach((v, i) => {
+      const opt = document.createElement("option");
+      opt.value = v.name;
+      opt.textContent = `${v.name} (${v.lang})`;
+      sel.appendChild(opt);
+    });
+    const def = pickDefaultVoice();
+    if (def) sel.value = def.name;
+  }
+
   async function loadAll() {
     // 1. 手工核心词
     if (window.WORD_DB) {
@@ -305,8 +391,7 @@
       u.lang = accent;
       u.rate = rate;
       u.pitch = pitch;
-      const voices = window.speechSynthesis.getVoices();
-      const v = voices.find(v => v.lang === accent) || voices.find(v => v.lang.startsWith("en"));
+      const v = pickDefaultVoice();
       if (v) u.voice = v;
       window.speechSynthesis.speak(u);
       return u;
@@ -474,8 +559,41 @@
     });
     document.querySelectorAll('input[name="accent"]').forEach(r => {
       r.addEventListener("change", () => {
+        // 切换口音时重新过滤声音列表
+        refreshVoiceList();
         flash("口音已切换", "");
       });
+    });
+
+    // 声音选择
+    const voiceSel = $("voiceSelect");
+    if (voiceSel) {
+      voiceSel.addEventListener("change", () => {
+        selectedVoiceName = voiceSel.value;
+        try { localStorage.setItem("phonics_lab_voice", selectedVoiceName); } catch (e) {}
+        // 用新声音读一个 demo
+        const v = pickDefaultVoice();
+        if (v) {
+          try { window.speechSynthesis.cancel(); } catch(e) {}
+          const u = new SpeechSynthesisUtterance("Hello, this is my new voice.");
+          u.lang = (document.querySelector('input[name="accent"]:checked') || {}).value || "en-US";
+          u.rate = 0.9;
+          u.voice = v;
+          window.speechSynthesis.speak(u);
+        }
+      });
+    }
+    $("voiceTestBtn").addEventListener("click", () => {
+      const v = pickDefaultVoice();
+      if (v) {
+        try { window.speechSynthesis.cancel(); } catch(e) {}
+        const u = new SpeechSynthesisUtterance("The quick brown fox jumps over the lazy dog.");
+        u.lang = (document.querySelector('input[name="accent"]:checked') || {}).value || "en-US";
+        u.rate = 0.9;
+        u.voice = v;
+        window.speechSynthesis.speak(u);
+        flash(`🔊 ${v.name}`, "success");
+      }
     });
   }
 
@@ -483,9 +601,22 @@
   async function boot() {
     setupTabs();
     bindEvents();
+    // 加载用户偏好
+    try { selectedVoiceName = localStorage.getItem("phonics_lab_voice") || null; } catch (e) {}
+    // 加载 TTS 声音（异步）
     if (window.speechSynthesis) {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+      const tryRefresh = () => {
+        if (availableVoices.length === 0) {
+          // 第一次，先尝试一次
+          refreshVoiceList();
+        }
+        // Chrome 异步加载
+        setTimeout(refreshVoiceList, 100);
+      };
+      tryRefresh();
+      window.speechSynthesis.onvoiceschanged = () => {
+        refreshVoiceList();
+      };
     }
     flash("加载词库中…", "warn");
     await loadAll();
