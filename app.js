@@ -407,7 +407,7 @@
     const slowBtn = card.querySelector(".play-slow");
     slowBtn.addEventListener("click", () => {
       slowBtn.classList.add("playing");
-      const u = speak(info.word, 0.5, 1);
+      const u = speak(info.word, 0.3, 1);
       u.onend = () => slowBtn.classList.remove("playing");
     });
 

@@ -199,7 +199,7 @@
       if (Dictation.current) speak(Dictation.current, 0.9);
     });
     $("dictPlaySlow").addEventListener("click", () => {
-      if (Dictation.current) speak(Dictation.current, 0.5);
+      if (Dictation.current) speak(Dictation.current, 0.3);
     });
     $("dictPlayPhoneme").addEventListener("click", () => {
       if (!Dictation.current || !window.Phonics) return;

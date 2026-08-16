@@ -771,6 +771,7 @@ html, body {
 }
 .play-btn {
   padding: 6px 10px;
+  min-width: 56px;
   border: 1.5px solid var(--line);
   background: #fff;
   border-radius: var(--radius-pill);
